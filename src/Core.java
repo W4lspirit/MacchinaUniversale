@@ -1,3 +1,7 @@
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.*;
 
 
@@ -18,6 +22,7 @@ public class Core {
 
     private List<Integer> removedKeys;
     private int keys;
+    final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
     // A 8-6 B 5-3 C 2-0
     public Core() {
@@ -252,7 +257,6 @@ public class Core {
     }
 
     /**
-     * TODO
      * #6 NotAnd
      * Each bit in the register A receives the 1 bit if
      * either register B or register C has a 0 bit in that
@@ -264,14 +268,17 @@ public class Core {
      * @param ic index of register C 3bit
      */
     private void notAnd(int ia, int ib, int ic) {
-        String ra = Integer.toBinaryString(register[ia]);
         String rb = Integer.toBinaryString(register[ib]);
         String rc = Integer.toBinaryString(register[ic]);
-        //TODO
-        /*iterate over rb rc
-        if (0) {
-            ra.setCharAt()
-        }*/
+        String tmp = "";
+        for(int i = 0; i < rb.length(); i++) {
+        	if ((rb.charAt(i) == '0') && (rc.charAt(i) == '0')) {
+        		tmp += "1";
+        	} else {
+        		tmp += "0";
+        	}
+        }
+        register[ia] = Integer.parseUnsignedInt(tmp);
     }
 
     /**
@@ -283,14 +290,12 @@ public class Core {
 
     /**
      * #8
+     * create new array
      *
      * @param ib index of the new array in the map
      * @param ic size of the new array
      */
     private void allocationTab(int ib, int ic) {
-        //create new array
-
-
         //get register at index ic
         int rc = register[ic];
         int[] newArray = new int[rc];
@@ -299,7 +304,6 @@ public class Core {
         trayIdToTraysMap.put(newID, newArray);
         //store the new id in register b
         register[ib] = newID;
-
     }
 
     /**
@@ -325,7 +329,37 @@ public class Core {
         if (rc < 0 || rc > 255) throw new RuntimeException("Stupid moron");
         System.out.println((char) rc);
     }
+    
+    public static String hexlify(byte[] bytes) {
+        char[] hexChars = new char[bytes.length * 2];
+        for ( int j = 0; j < bytes.length; j++ ) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = hexArray[v >>> 4];
+            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+        }
+        String ret = new String(hexChars);
+        return ret;
+}
 
+    private void loadUmz(File file_path) {
+
+    	BufferedReader br = null;
+    	ArrayList<Integer> res = new ArrayList<>();
+    	try {
+    		br = new BufferedReader(new FileReader(file_path));
+    		int tmp = Integer.parseInt(hexlify(br.toString().getBytes()));
+    	    res.add(tmp);
+    	} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				br.close();
+			} catch (IOException ex) {
+				ex.printStackTrace();
+			}
+		}
+    }
+    
     /**
      * #11. Input.
      * The universal machine waits for input on the console.
@@ -340,6 +374,7 @@ public class Core {
         /*TODO                   If the end of input has been signaled */
         if (rc < 0 || rc > 255) throw new RuntimeException("Stupid moron");
         register[ic] = rc;
+        
 
     }
 
