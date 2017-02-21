@@ -15,8 +15,7 @@ import java.util.*;
  */
 public class Core {
 
-    public static final char _ZERO = '0';
-    final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
+    private static final char _ZERO = '0';
     // registre capable de stocker un plateau
     private int register[];
     private Map<Integer, int[]> trayIdToTraysMap;
@@ -44,9 +43,9 @@ public class Core {
         core.run();
     }
 
-    static String toBinaryString(int i) {
+    private static String toBinaryString(int i) {
         String s = Integer.toBinaryString(i);
-        StringBuffer sb = new StringBuffer(s);
+        StringBuilder sb = new StringBuilder(s);
         int numZeros = 32 - s.length();
         while (numZeros-- > 0) {
             sb.insert(0, _ZERO);
@@ -54,9 +53,9 @@ public class Core {
         return sb.toString();
     }
 
-    public void run() {
+    private void run() {
 
-        String binTab = "";
+        String binTab;
         while (pc < trayIdToTraysMap.get(0).length) {
 
             int[] ops = trayIdToTraysMap.get(0);
@@ -141,16 +140,16 @@ public class Core {
      * Initialize the 0 platter with a list of instruction
      */
     private void init(String fileName) {
-        /**
+        /*
          * All registers shall be initialized with platters of value '0'.
          */
         Arrays.fill(register, 0);
-        /**
+        /*
          * The execution finger shall point to the first platter of the '0' array, which has offset zero.
          */
         pc = 0;
 
-        /**
+        /*
          * The machine shall be initialized with a '0' array whose contents shall be read from a "program" scroll.
          */
         int[] ints = loadUmz(fileName);
