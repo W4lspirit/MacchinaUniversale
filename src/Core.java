@@ -1,7 +1,8 @@
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.*;
 
 
@@ -14,15 +15,15 @@ import java.util.*;
  */
 public class Core {
 
+    public static final char _ZERO = '0';
+    final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
     // registre capable de stocker un plateau
     private int register[];
     private Map<Integer, int[]> trayIdToTraysMap;
     private int pc = 0;
-
-
     private List<Integer> removedKeys;
     private int keys;
-    final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
+
 
     // A 8-6 B 5-3 C 2-0
     public Core() {
@@ -31,17 +32,46 @@ public class Core {
         removedKeys = new ArrayList<>();
     }
 
+    public static void main(String args[]) {
+/*        String filename = args[0];
+        boolean encrypted = Boolean.parseBoolean(args[1]);
+        String key;
+        if (encrypted) {
+            key = args[2];
+        }*/
+        Core core = new Core();
+        core.init("file/sandmark.umz");
+        core.run();
+    }
+
+    static String toBinaryString(int i) {
+        String s = Integer.toBinaryString(i);
+        StringBuffer sb = new StringBuffer(s);
+        int numZeros = 32 - s.length();
+        while (numZeros-- > 0) {
+            sb.insert(0, _ZERO);
+        }
+        return sb.toString();
+    }
 
     public void run() {
-        init();
+
         String binTab = "";
-        while (true) {
+        while (pc < trayIdToTraysMap.get(0).length) {
+
+            int[] ops = trayIdToTraysMap.get(0);
+            if (ops == null) {
+                throw new RuntimeException("Stupid moron");
+            }
             /* décodage */
+
+            binTab = toBinaryString(ops[pc]);
             int op = getOperation(binTab);
             if (Objects.equals(op, ConstantHolder._1101)) {
                 int ia = getSegmentASpe(binTab);
                 int segValue = getValue(binTab);
                 orthography(ia, segValue);
+                pc++;
             } else {
                 int ia = getSegmentA(binTab);
                 int ib = getSegmentB(binTab);
@@ -94,34 +124,51 @@ public class Core {
                         pc++;
                         break;
                     case ConstantHolder._1011:    //11
-                        input(ic, getValue(binTab));
+                        input(ic);
                         pc++;
                         break;
                     case ConstantHolder._1100:    //12
                         load(ib, ic);
-                        pc++;
+//ne pas incremnte le pc ici
                         break;
                 }
             }
+            // System.out.println(pc);
         }
     }
 
-    private void init() {
+    /**
+     * Initialize the 0 platter with a list of instruction
+     */
+    private void init(String fileName) {
+        /**
+         * All registers shall be initialized with platters of value '0'.
+         */
+        Arrays.fill(register, 0);
+        /**
+         * The execution finger shall point to the first platter of the '0' array, which has offset zero.
+         */
         pc = 0;
-        // TODO load all scrolls into trayIdToTraysMap start at index 0
+
+        /**
+         * The machine shall be initialized with a '0' array whose contents shall be read from a "program" scroll.
+         */
+        int[] ints = loadUmz(fileName);
+        trayIdToTraysMap.put(0, ints);
+
 
     }
 
     private int getOperation(String binTab) {
-        return Integer.parseUnsignedInt(binTab.substring(0, 4));
+        return Integer.parseUnsignedInt(binTab.substring(0, 4), 2);
     }
 
     private int getSegmentASpe(String binTab) {
-        return Integer.parseUnsignedInt(binTab.substring(4, 7));
+        return Integer.parseUnsignedInt(binTab.substring(4, 7), 2);
     }
 
     private int getValue(String binTab) {
-        return Integer.parseUnsignedInt(binTab.substring(7, binTab.length()));
+        return Integer.parseUnsignedInt(binTab.substring(7, binTab.length()), 2);
 
     }
 
@@ -140,15 +187,15 @@ public class Core {
 
     //Transform binary string
     private int getSegmentA(String binTab) {
-        return Integer.parseUnsignedInt(binTab.substring(23, 26));
+        return Integer.parseUnsignedInt(binTab.substring(23, 26), 2);
     }
 
     private int getSegmentB(String binTab) {
-        return Integer.parseUnsignedInt(binTab.substring(26, 29));
+        return Integer.parseUnsignedInt(binTab.substring(26, 29), 2);
     }
 
     private int getSegmentC(String binTab) {
-        return Integer.parseUnsignedInt(binTab.substring(29, binTab.length()));
+        return Integer.parseUnsignedInt(binTab.substring(29, binTab.length()), 2);
     }
 
     /**
@@ -268,17 +315,17 @@ public class Core {
      * @param ic index of register C 3bit
      */
     private void notAnd(int ia, int ib, int ic) {
-        String rb = Integer.toBinaryString(register[ib]);
-        String rc = Integer.toBinaryString(register[ic]);
+        String rb = toBinaryString(register[ib]);
+        String rc = toBinaryString(register[ic]);
         String tmp = "";
-        for(int i = 0; i < rb.length(); i++) {
-        	if ((rb.charAt(i) == '0') && (rc.charAt(i) == '0')) {
-        		tmp += "1";
-        	} else {
-        		tmp += "0";
-        	}
+        for (int i = 0; i < rb.length(); i++) {
+            if ((rb.charAt(i) == '0') && (rc.charAt(i) == '0')) {
+                tmp += "1";
+            } else {
+                tmp += "0";
+            }
         }
-        register[ia] = Integer.parseUnsignedInt(tmp);
+        register[ia] = Integer.parseUnsignedInt(tmp, 2);
     }
 
     /**
@@ -327,39 +374,9 @@ public class Core {
     private void print(int ic) {
         int rc = register[ic];
         if (rc < 0 || rc > 255) throw new RuntimeException("Stupid moron");
-        System.out.println((char) rc);
+        System.out.print((char) rc);
     }
-    
-    public static String hexlify(byte[] bytes) {
-        char[] hexChars = new char[bytes.length * 2];
-        for ( int j = 0; j < bytes.length; j++ ) {
-            int v = bytes[j] & 0xFF;
-            hexChars[j * 2] = hexArray[v >>> 4];
-            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-        }
-        String ret = new String(hexChars);
-        return ret;
-}
 
-    private void loadUmz(File file_path) {
-
-    	BufferedReader br = null;
-    	ArrayList<Integer> res = new ArrayList<>();
-    	try {
-    		br = new BufferedReader(new FileReader(file_path));
-    		int tmp = Integer.parseInt(hexlify(br.toString().getBytes()));
-    	    res.add(tmp);
-    	} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				br.close();
-			} catch (IOException ex) {
-				ex.printStackTrace();
-			}
-		}
-    }
-    
     /**
      * #11. Input.
      * The universal machine waits for input on the console.
@@ -370,11 +387,14 @@ public class Core {
      * where every place is pregnant with the 1 bit.
      */
 
-    private void input(int ic, int rc) {
+    private void input(int ic) {
         /*TODO                   If the end of input has been signaled */
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("ic = [" + ic + "] enter");
+        int rc = scanner.nextInt();
         if (rc < 0 || rc > 255) throw new RuntimeException("Stupid moron");
         register[ic] = rc;
-        
+
 
     }
 
@@ -420,13 +440,36 @@ public class Core {
         return key;
     }
 
+    private int[] loadUmz(String filePath) {
+        File f;
+        FileInputStream br = null;
+        Byte defaultByte = (byte) 0;
 
-    public void main(String args[]) {
-        String lS = "10100001010001011010000101000101";
-        int anInt1 = 0b10100001010001011010000101000101;
-        int lI = Integer.parseUnsignedInt(lS);
-        System.out.println(lS + "==" + lI + (anInt1 == lI));
+        try {
+            f = new File(filePath);
+            byte[] bytes = new byte[(int) f.length()];
+            br = new FileInputStream(f);
+            System.out.println(br.read(bytes));
 
-
+            ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
+            for (int i = 0; i < f.length() % 4; ++i) {
+                byteBuffer = byteBuffer.put(defaultByte);
+            }
+            IntBuffer intBuffer = byteBuffer.asIntBuffer();
+            int[] array = new int[intBuffer.limit()];
+            System.out.println(intBuffer.get(array));
+            return array;
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (br != null) {
+                    br.close();
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return new int[0];
     }
 }
