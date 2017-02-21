@@ -314,17 +314,17 @@ public class Core {
      * @param ic index of register C 3bit
      */
     private void notAnd(int ia, int ib, int ic) {
-        String rb = toBinaryString(register[ib]);
-        String rc = toBinaryString(register[ic]);
-        String tmp = "";
-        for (int i = 0; i < rb.length(); i++) {
-            if ((rb.charAt(i) == '0') && (rc.charAt(i) == '0')) {
-                tmp += "1";
-            } else {
-                tmp += "0";
-            }
-        }
-        register[ia] = Integer.parseUnsignedInt(tmp, 2);
+    	String rb = Integer.toBinaryString(register[ib]);
+    	String rc = Integer.toBinaryString(register[ic]);
+    	String tmp = "";
+    	for(int i = 0; i < rb.length(); i++) {
+    		if ((rb.charAt(i) == '1') && (rc.charAt(i) == '1')) {
+    			tmp += "0";
+    		} else {
+    			tmp += "1";
+    		}
+    	}
+    	register[ia] = Integer.parseUnsignedInt(tmp);
     }
 
     /**
