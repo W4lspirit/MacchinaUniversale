@@ -15,7 +15,23 @@ import java.util.*;
  */
 public class Core {
 
+    private static final int _0000 = 0b0000;
+    private static final int _0001 = 0b0001;
+    private static final int _0010 = 0b0010;
+    private static final int _0011 = 0b0011;
+    private static final int _0100 = 0b0100;
+    private static final int _0101 = 0b0101;
+    private static final int _0110 = 0b0110;
+    private static final int _0111 = 0b0111;
+    private static final int _1000 = 0b1000;
+    private static final int _1001 = 0b1001;
+    private static final int _1010 = 0b1010;
+    private static final int _1011 = 0b1011;
+    private static final int _1100 = 0b1100;
+    private static final int _1101 = 0b1101;
+    private static final char _ONE = '1';
     private static final char _ZERO = '0';
+    long _mod32 = (long) Math.pow(2, 32);
     // registre capable de stocker un plateau
     private int register[];
     private Map<Integer, int[]> trayIdToTraysMap;
@@ -40,6 +56,7 @@ public class Core {
         }*/
         Core core = new Core();
         core.init("file/sandmark.umz");
+        System.out.println("Time start " + new Date(System.currentTimeMillis()));
         core.run();
     }
 
@@ -66,7 +83,7 @@ public class Core {
 
             binTab = toBinaryString(ops[pc]);
             int op = getOperation(binTab);
-            if (Objects.equals(op, ConstantHolder._1101)) {
+            if (Objects.equals(op, _1101)) {
                 int ia = getSegmentASpe(binTab);
                 int segValue = getValue(binTab);
                 orthography(ia, segValue);
@@ -78,55 +95,55 @@ public class Core {
 
 
                 switch (op) {
-                    case ConstantHolder._0000:    //0
+                    case _0000:    //0
                         tryMove(ia, ib, ic);
                         pc++;
                         break;
-                    case ConstantHolder._0001:    //1
+                    case _0001:    //1
                         index(ia, ib, ic);
                         pc++;
                         break;
-                    case ConstantHolder._0010:    //2
+                    case _0010:    //2
                         amendment(ia, ib, ic);
                         pc++;
                         break;
-                    case ConstantHolder._0011:    //3
+                    case _0011:    //3
                         add(ia, ib, ic);
                         pc++;
                         break;
-                    case ConstantHolder._0100:    //4
+                    case _0100:    //4
                         mul(ia, ib, ic);
                         pc++;
                         break;
-                    case ConstantHolder._0101:    //5
+                    case _0101:    //5
                         div(ia, ib, ic);
                         pc++;
                         break;
-                    case ConstantHolder._0110:    //6
+                    case _0110:    //6
                         notAnd(ia, ib, ic);
                         pc++;
                         break;
-                    case ConstantHolder._0111:    //7
+                    case _0111:    //7
                         stop();
                         pc++;
                         break;
-                    case ConstantHolder._1000:    //8
+                    case _1000:    //8
                         allocationTab(ib, ic);
                         pc++;
                         break;
-                    case ConstantHolder._1001:    //9
+                    case _1001:    //9
                         giveUp(ic);
                         pc++;
                         break;
-                    case ConstantHolder._1010:    //10
+                    case _1010:    //10
                         print(ic);
                         pc++;
                         break;
-                    case ConstantHolder._1011:    //11
+                    case _1011:    //11
                         input(ic);
                         pc++;
                         break;
-                    case ConstantHolder._1100:    //12
+                    case _1100:    //12
                         load(ib, ic);
 //ne pas incremnte le pc ici
                         break;
@@ -227,8 +244,8 @@ public class Core {
         //index of the platter in the array
         int rb = register[ib];
         //store the array in register A
-        int[] lIntegers = trayIdToTraysMap.get(rc);
-        register[ia] = lIntegers[rb];
+        int[] lIntegers = trayIdToTraysMap.get(rb);
+        register[ia] = lIntegers[rc];
     }
 
     /**
@@ -266,7 +283,7 @@ public class Core {
         int rb = register[ib];
         int rc = register[ic];
 
-        register[ia] = (int) ((rb + rc) % ConstantHolder._mod32);
+        register[ia] = (int) ((rb + rc) % _mod32);
     }
 
     /**
@@ -281,7 +298,7 @@ public class Core {
     private void mul(int ia, int ib, int ic) {
         int rb = register[ib];
         int rc = register[ic];
-        register[ia] = (int) ((rb * rc) % ConstantHolder._mod32);
+        register[ia] = (int) ((rb * rc) % _mod32);
     }
 
     /**
@@ -314,17 +331,17 @@ public class Core {
      * @param ic index of register C 3bit
      */
     private void notAnd(int ia, int ib, int ic) {
-    	String rb = Integer.toBinaryString(register[ib]);
-    	String rc = Integer.toBinaryString(register[ic]);
-    	String tmp = "";
-    	for(int i = 0; i < rb.length(); i++) {
-    		if ((rb.charAt(i) == '1') && (rc.charAt(i) == '1')) {
-    			tmp += "0";
-    		} else {
-    			tmp += "1";
-    		}
-    	}
-    	register[ia] = Integer.parseUnsignedInt(tmp);
+        String rb = toBinaryString(register[ib]);
+        String rc = toBinaryString(register[ic]);
+        StringBuilder tmp = new StringBuilder();
+        for (int i = 0; i < rb.length(); i++) {
+            if ((rb.charAt(i) == '1') && (rc.charAt(i) == '1')) {
+                tmp.append(_ZERO);
+            } else {
+                tmp.append(_ONE);
+            }
+        }
+        register[ia] = Integer.parseUnsignedInt(tmp.toString(), 2);
     }
 
     /**
@@ -443,7 +460,7 @@ public class Core {
         File f;
         FileInputStream br = null;
         Byte defaultByte = (byte) 0;
-
+        long start = System.currentTimeMillis();
         try {
             f = new File(filePath);
             byte[] bytes = new byte[(int) f.length()];
@@ -457,6 +474,7 @@ public class Core {
             IntBuffer intBuffer = byteBuffer.asIntBuffer();
             int[] array = new int[intBuffer.limit()];
             System.out.println(intBuffer.get(array));
+            System.out.println("Load umz in " + (System.currentTimeMillis() - start) / 1000);
             return array;
         } catch (IOException e) {
             e.printStackTrace();
