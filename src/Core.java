@@ -31,7 +31,7 @@ public class Core {
     private static final int _1101 = 0b1101;
     private static final char _ONE = '1';
     private static final char _ZERO = '0';
-    long _mod32 = (long) Math.pow(2, 32);
+    private static long _mod32 = (long) Math.pow(2, 32);
     // registre capable de stocker un plateau
     private int register[];
     private Map<Integer, int[]> trayIdToTraysMap;
@@ -80,18 +80,25 @@ public class Core {
                 throw new RuntimeException("Stupid moron");
             }
             /* décodage */
-
-            binTab = toBinaryString(ops[pc]);
-            int op = getOperation(binTab);
+            int n32 = ops[pc];
+            /*binTab = toBinaryString(ops[pc]);*/
+            /*int op = getOperation(binTab);*/
+            int op = (n32 >> 28) & 0b1111;
             if (Objects.equals(op, _1101)) {
-                int ia = getSegmentASpe(binTab);
-                int segValue = getValue(binTab);
+                /*int ia = getSegmentASpe(binTab);*/
+                int ia = (n32 >> 25) & 0b111;
+                /*int segValue = getValue(binTab);*/
+                int segValue = (n32 & 0b1111111111111111111111111);
                 orthography(ia, segValue);
                 pc++;
             } else {
-                int ia = getSegmentA(binTab);
+                /*int ia = getSegmentA(binTab);
                 int ib = getSegmentB(binTab);
-                int ic = getSegmentC(binTab);
+                int ic = getSegmentC(binTab);*/
+                //shift left 3 take the mask
+                int ia = ((n32 >> 6) & 0b111);
+                int ib = ((n32 >> 3) & 0b111);
+                int ic = (n32 & 0b111);
 
 
                 switch (op) {
@@ -331,7 +338,7 @@ public class Core {
      * @param ic index of register C 3bit
      */
     private void notAnd(int ia, int ib, int ic) {
-        String rb = toBinaryString(register[ib]);
+        /*String rb = toBinaryString(register[ib]);
         String rc = toBinaryString(register[ic]);
         StringBuilder tmp = new StringBuilder();
         for (int i = 0; i < rb.length(); i++) {
@@ -341,7 +348,8 @@ public class Core {
                 tmp.append(_ONE);
             }
         }
-        register[ia] = Integer.parseUnsignedInt(tmp.toString(), 2);
+        register[ia] = Integer.parseUnsignedInt(tmp.toString(), 2);*/
+        register[ia] = ~(register[ib] & register[ic]);
     }
 
     /**
@@ -359,6 +367,7 @@ public class Core {
      * @param ic size of the new array
      */
     private void allocationTab(int ib, int ic) {
+        System.out.println("ib = [" + ib + "], ic = [" + ic + "]");
         //get register at index ic
         int rc = register[ic];
         int[] newArray = new int[rc];
