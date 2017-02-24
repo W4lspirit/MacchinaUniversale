@@ -38,13 +38,16 @@ public class Core {
     private int pc = 0;
     private List<Integer> removedKeys;
     private int keys;
-
+//tree map 426
+// hashTable 268
+//67 linkedmap
 
     // A 8-6 B 5-3 C 2-0
     public Core() {
         register = new int[8];
-        trayIdToTraysMap = new HashMap<>();
-        removedKeys = new ArrayList<>();
+        trayIdToTraysMap = new LinkedHashMap<>();
+        removedKeys = new LinkedList<>();
+        //removedKeys = new ArrayList<>();
     }
 
     public static void main(String args[]) {
@@ -56,8 +59,10 @@ public class Core {
         }*/
         Core core = new Core();
         core.init("file/sandmark.umz");
-        System.out.println("Time start " + new Date(System.currentTimeMillis()));
+        long date = System.currentTimeMillis();
+        System.out.println("Time start " + new Date(date));
         core.run();
+        System.out.println("Time start " + (System.currentTimeMillis() - date) / 1000);
     }
 
     private static String toBinaryString(int i) {
@@ -71,92 +76,98 @@ public class Core {
     }
 
     private void run() {
+        try {
 
-        String binTab;
-        while (pc < trayIdToTraysMap.get(0).length) {
 
-            int[] ops = trayIdToTraysMap.get(0);
-            if (ops == null) {
-                throw new RuntimeException("Stupid moron");
-            }
+            String binTab;
+            while (pc < trayIdToTraysMap.get(0).length) {
+
+                int[] ops = trayIdToTraysMap.get(0);
+                if (ops == null) {
+                    throw new RuntimeException("Stupid moron");
+                }
             /* décodage */
-            int n32 = ops[pc];
+                int n32 = ops[pc];
             /*binTab = toBinaryString(ops[pc]);*/
             /*int op = getOperation(binTab);*/
-            int op = (n32 >> 28) & 0b1111;
-            if (Objects.equals(op, _1101)) {
+                int op = (n32 >> 28) & 0b1111;
+                if (Objects.equals(op, _1101)) {
                 /*int ia = getSegmentASpe(binTab);*/
-                int ia = (n32 >> 25) & 0b111;
+                    int ia = (n32 >> 25) & 0b111;
                 /*int segValue = getValue(binTab);*/
-                int segValue = (n32 & 0b1111111111111111111111111);
-                orthography(ia, segValue);
-                pc++;
-            } else {
+                    int segValue = (n32 & 0b1111111111111111111111111);
+                    orthography(ia, segValue);
+                    pc++;
+                } else {
                 /*int ia = getSegmentA(binTab);
                 int ib = getSegmentB(binTab);
                 int ic = getSegmentC(binTab);*/
-                //shift left 3 take the mask
-                int ia = ((n32 >> 6) & 0b111);
-                int ib = ((n32 >> 3) & 0b111);
-                int ic = (n32 & 0b111);
+                    //shift left 3 take the mask
+                    int ia = ((n32 >> 6) & 0b111);
+                    int ib = ((n32 >> 3) & 0b111);
+                    int ic = (n32 & 0b111);
 
 
-                switch (op) {
-                    case _0000:    //0
-                        tryMove(ia, ib, ic);
-                        pc++;
-                        break;
-                    case _0001:    //1
-                        index(ia, ib, ic);
-                        pc++;
-                        break;
-                    case _0010:    //2
-                        amendment(ia, ib, ic);
-                        pc++;
-                        break;
-                    case _0011:    //3
-                        add(ia, ib, ic);
-                        pc++;
-                        break;
-                    case _0100:    //4
-                        mul(ia, ib, ic);
-                        pc++;
-                        break;
-                    case _0101:    //5
-                        div(ia, ib, ic);
-                        pc++;
-                        break;
-                    case _0110:    //6
-                        notAnd(ia, ib, ic);
-                        pc++;
-                        break;
-                    case _0111:    //7
-                        stop();
-                        pc++;
-                        break;
-                    case _1000:    //8
-                        allocationTab(ib, ic);
-                        pc++;
-                        break;
-                    case _1001:    //9
-                        giveUp(ic);
-                        pc++;
-                        break;
-                    case _1010:    //10
-                        print(ic);
-                        pc++;
-                        break;
-                    case _1011:    //11
-                        input(ic);
-                        pc++;
-                        break;
-                    case _1100:    //12
-                        load(ib, ic);
+                    switch (op) {
+                        case _0000:    //0
+                            tryMove(ia, ib, ic);
+                            pc++;
+                            break;
+                        case _0001:    //1
+                            index(ia, ib, ic);
+                            pc++;
+                            break;
+                        case _0010:    //2
+                            amendment(ia, ib, ic);
+                            pc++;
+                            break;
+                        case _0011:    //3
+                            add(ia, ib, ic);
+                            pc++;
+                            break;
+                        case _0100:    //4
+                            mul(ia, ib, ic);
+                            pc++;
+                            break;
+                        case _0101:    //5
+                            div(ia, ib, ic);
+                            pc++;
+                            break;
+                        case _0110:    //6
+                            notAnd(ia, ib, ic);
+                            pc++;
+                            break;
+                        case _0111:    //7
+                            //stop();
+                            throw new Exception();
+
+
+                        case _1000:    //8
+                            allocationTab(ib, ic);
+                            pc++;
+                            break;
+                        case _1001:    //9
+                            giveUp(ic);
+                            pc++;
+                            break;
+                        case _1010:    //10
+                            print(ic);
+                            pc++;
+                            break;
+                        case _1011:    //11
+                            input(ic);
+                            pc++;
+                            break;
+                        case _1100:    //12
+                            load(ib, ic);
 //ne pas incremnte le pc ici
-                        break;
+                            break;
+                    }
                 }
+                // System.out.println(pc);
             }
-            // System.out.println(pc);
+        } catch (Exception e) {
+
         }
     }
 
@@ -290,7 +301,7 @@ public class Core {
         int rb = register[ib];
         int rc = register[ic];
 
-        register[ia] = (int) ((rb + rc) % _mod32);
+        register[ia] = (rb + rc);
     }
 
     /**
@@ -305,7 +316,7 @@ public class Core {
     private void mul(int ia, int ib, int ic) {
         int rb = register[ib];
         int rc = register[ic];
-        register[ia] = (int) ((rb * rc) % _mod32);
+        register[ia] = (rb * rc);
     }
 
     /**
@@ -357,6 +368,7 @@ public class Core {
      */
     private void stop() {
         System.exit(3);
+
     }
 
     /**
@@ -367,7 +379,7 @@ public class Core {
      * @param ic size of the new array
      */
     private void allocationTab(int ib, int ic) {
-        System.out.println("ib = [" + ib + "], ic = [" + ic + "]");
+        //System.out.println("ib = [" + ib + "], ic = [" + ic + "]");
         //get register at index ic
         int rc = register[ic];
         int[] newArray = new int[rc];
@@ -433,11 +445,16 @@ public class Core {
 
         //load register B
         int idB = register[ib];
+
         //retrieve the array associated to idb(register[ib])
         int array[] = trayIdToTraysMap.get(idB);
         //clone array
-        int[] arrayClone = array.clone();
+        int[] arrayClone = array;
+        if (idB != 0) {
+            arrayClone = array.clone();
+        }
         //insert cloned array at index 0 of the mastercollection
+
         trayIdToTraysMap.put(0, arrayClone);
         //execution finger is moved to the value register C
         pc = register[ic];
