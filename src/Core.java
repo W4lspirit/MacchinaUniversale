@@ -6,13 +6,6 @@ import java.nio.IntBuffer;
 import java.util.*;
 
 
-/**
- * TODO
- * - Réparer acces mouvement au tableau (tray)
- * -  index alloc abandon sur trayIdToTraysMap tray[]
- * <p>
- * http://stackoverflow.com/questions/430346/why-doesnt-java-support-unsigned-ints
- */
 public class Core {
 
     private static final int _0000 = 0b0000;
@@ -29,25 +22,31 @@ public class Core {
     private static final int _1011 = 0b1011;
     private static final int _1100 = 0b1100;
     private static final int _1101 = 0b1101;
-    private static final char _ONE = '1';
-    private static final char _ZERO = '0';
-    private static long _mod32 = (long) Math.pow(2, 32);
+
+
     // registre capable de stocker un plateau
     private int register[];
-    private Map<Integer, int[]> trayIdToTraysMap;
+    private HashMap<Integer, int[]> trayIdToTraysMap;
     private int pc = 0;
-    private List<Integer> removedKeys;
+    private LinkedList<Integer> removedKeys;
     private int keys;
+    private int[] mZeroPlatter;
 //tree map 426
-// hashTable 268
-//67 linkedmap
+//hashTable 268
+//linkedmap 67
+//linkedlist 55
+//hashmap Time31
+//linked map Hashmap part
+//without Zero platter ref 68-55
+//with zero platter ref 37 36
+//pollFirst check null 32
 
     // A 8-6 B 5-3 C 2-0
     public Core() {
         register = new int[8];
-        trayIdToTraysMap = new LinkedHashMap<>();
+        trayIdToTraysMap = new HashMap<>();
         removedKeys = new LinkedList<>();
-        //removedKeys = new ArrayList<>();
+
     }
 
     public static void main(String args[]) {
@@ -62,46 +61,55 @@ public class Core {
         long date = System.currentTimeMillis();
         System.out.println("Time start " + new Date(date));
         core.run();
-        System.out.println("Time start " + (System.currentTimeMillis() - date) / 1000);
+        System.out.println("Execution Time in s " + (System.currentTimeMillis() - date) / 1000);
     }
 
-    private static String toBinaryString(int i) {
-        String s = Integer.toBinaryString(i);
-        StringBuilder sb = new StringBuilder(s);
-        int numZeros = 32 - s.length();
-        while (numZeros-- > 0) {
-            sb.insert(0, _ZERO);
-        }
-        return sb.toString();
+    /**
+     * Initialize the 0 platter with a list of instruction
+     */
+    private void init(String fileName) {
+        /*
+         * All registers shall be initialized with platters of value '0'.
+         */
+        Arrays.fill(register, 0);
+        /*
+         * The execution finger shall point to the first platter of the '0' array, which has offset zero.
+         */
+        pc = 0;
+
+        /*
+         * The machine shall be initialized with a '0' array whose contents shall be read from a "program" scroll.
+         */
+        int[] ints = loadUmz(fileName);
+        mZeroPlatter = ints;
+        trayIdToTraysMap.put(0, ints);
+
+
     }
 
     private void run() {
         try {
 
 
-            String binTab;
-            while (pc < trayIdToTraysMap.get(0).length) {
+            while (pc < mZeroPlatter.length) {
 
-                int[] ops = trayIdToTraysMap.get(0);
-                if (ops == null) {
+
+                if (mZeroPlatter == null) {
                     throw new RuntimeException("Stupid moron");
                 }
             /* décodage */
-                int n32 = ops[pc];
-            /*binTab = toBinaryString(ops[pc]);*/
-            /*int op = getOperation(binTab);*/
+                int n32 = mZeroPlatter[pc];
+
                 int op = (n32 >> 28) & 0b1111;
                 if (Objects.equals(op, _1101)) {
-                /*int ia = getSegmentASpe(binTab);*/
+
                     int ia = (n32 >> 25) & 0b111;
-                /*int segValue = getValue(binTab);*/
+
                     int segValue = (n32 & 0b1111111111111111111111111);
                     orthography(ia, segValue);
                     pc++;
                 } else {
-                /*int ia = getSegmentA(binTab);
-                int ib = getSegmentB(binTab);
-                int ic = getSegmentC(binTab);*/
+
                     //shift left 3 take the mask
                     int ia = ((n32 >> 6) & 0b111);
                     int ib = ((n32 >> 3) & 0b111);
@@ -140,8 +148,7 @@ public class Core {
                         case _0111:    //7
                             //stop();
                             throw new Exception();
-
-
+                            //Sytem.exit(3);
                         case _1000:    //8
                             allocationTab(ib, ic);
                             pc++;
@@ -168,42 +175,42 @@ public class Core {
             }
         } catch (Exception e) {
 
+            //nothing in the catch  pls (bad programming skill)
         }
     }
 
-    /**
-     * Initialize the 0 platter with a list of instruction
-     */
-    private void init(String fileName) {
-        /*
-         * All registers shall be initialized with platters of value '0'.
-         */
-        Arrays.fill(register, 0);
-        /*
-         * The execution finger shall point to the first platter of the '0' array, which has offset zero.
-         */
-        pc = 0;
+    private int[] loadUmz(String filePath) {
+        File f;
+        FileInputStream br = null;
+        Byte defaultByte = (byte) 0;
+        long start = System.currentTimeMillis();
+        try {
+            f = new File(filePath);
+            byte[] bytes = new byte[(int) f.length()];
+            br = new FileInputStream(f);
+            System.out.println(br.read(bytes));
 
-        /*
-         * The machine shall be initialized with a '0' array whose contents shall be read from a "program" scroll.
-         */
-        int[] ints = loadUmz(fileName);
-        trayIdToTraysMap.put(0, ints);
-
-
-    }
-
-    private int getOperation(String binTab) {
-        return Integer.parseUnsignedInt(binTab.substring(0, 4), 2);
-    }
-
-    private int getSegmentASpe(String binTab) {
-        return Integer.parseUnsignedInt(binTab.substring(4, 7), 2);
-    }
-
-    private int getValue(String binTab) {
-        return Integer.parseUnsignedInt(binTab.substring(7, binTab.length()), 2);
-
+            ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
+            for (int i = 0; i < f.length() % 4; ++i) {
+                byteBuffer = byteBuffer.put(defaultByte);
+            }
+            IntBuffer intBuffer = byteBuffer.asIntBuffer();
+            int[] array = new int[intBuffer.limit()];
+            System.out.println(intBuffer.get(array));
+            System.out.println("Load umz in " + (System.currentTimeMillis() - start) / 1000);
+            return array;
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (br != null) {
+                    br.close();
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return new int[0];
     }
 
     /**
@@ -217,19 +224,6 @@ public class Core {
     private void orthography(int ia, int value) {
         register[ia] = value;
 
-    }
-
-    //Transform binary string
-    private int getSegmentA(String binTab) {
-        return Integer.parseUnsignedInt(binTab.substring(23, 26), 2);
-    }
-
-    private int getSegmentB(String binTab) {
-        return Integer.parseUnsignedInt(binTab.substring(26, 29), 2);
-    }
-
-    private int getSegmentC(String binTab) {
-        return Integer.parseUnsignedInt(binTab.substring(29, binTab.length()), 2);
     }
 
     /**
@@ -262,7 +256,13 @@ public class Core {
         //index of the platter in the array
         int rb = register[ib];
         //store the array in register A
-        int[] lIntegers = trayIdToTraysMap.get(rb);
+        int[] lIntegers;
+        if (rb == 0) {
+            lIntegers = mZeroPlatter;
+        } else {
+            lIntegers = trayIdToTraysMap.get(rb);
+        }
+
         register[ia] = lIntegers[rc];
     }
 
@@ -280,8 +280,15 @@ public class Core {
         int ra = register[ia];
         //index of the platter in the array
         int rb = register[ib];
+        int[] lIntegers;
         //get the array
-        int[] lIntegers = trayIdToTraysMap.get(ra);
+        if (ra == 0) {
+            lIntegers = mZeroPlatter;
+        } else {
+            lIntegers = trayIdToTraysMap.get(ra);
+        }
+
+
         //put value of register C in the array at pos rb
         lIntegers[rb] = register[ic];
 
@@ -349,26 +356,8 @@ public class Core {
      * @param ic index of register C 3bit
      */
     private void notAnd(int ia, int ib, int ic) {
-        /*String rb = toBinaryString(register[ib]);
-        String rc = toBinaryString(register[ic]);
-        StringBuilder tmp = new StringBuilder();
-        for (int i = 0; i < rb.length(); i++) {
-            if ((rb.charAt(i) == '1') && (rc.charAt(i) == '1')) {
-                tmp.append(_ZERO);
-            } else {
-                tmp.append(_ONE);
-            }
-        }
-        register[ia] = Integer.parseUnsignedInt(tmp.toString(), 2);*/
+
         register[ia] = ~(register[ib] & register[ic]);
-    }
-
-    /**
-     * #7 Stop
-     */
-    private void stop() {
-        System.exit(3);
-
     }
 
     /**
@@ -386,6 +375,9 @@ public class Core {
         int newID = genArrayID();
         //insert into map
         trayIdToTraysMap.put(newID, newArray);
+        if (newID == 0) {
+            mZeroPlatter = newArray;
+        }
         //store the new id in register b
         register[ib] = newID;
     }
@@ -425,7 +417,7 @@ public class Core {
      */
 
     private void input(int ic) {
-        /*TODO                   If the end of input has been signaled */
+
         Scanner scanner = new Scanner(System.in);
         System.out.println("ic = [" + ic + "] enter");
         int rc = scanner.nextInt();
@@ -446,16 +438,16 @@ public class Core {
         //load register B
         int idB = register[ib];
 
-        //retrieve the array associated to idb(register[ib])
-        int array[] = trayIdToTraysMap.get(idB);
-        //clone array
-        int[] arrayClone = array;
         if (idB != 0) {
-            arrayClone = array.clone();
+            //retrieve the array associated to idb(register[ib])
+            int array[] = trayIdToTraysMap.get(idB);
+            //clone array
+            mZeroPlatter = array.clone();
+            //insert cloned array at index 0 of the mastercollection
+            trayIdToTraysMap.put(0, mZeroPlatter);
         }
-        //insert cloned array at index 0 of the mastercollection
 
-        trayIdToTraysMap.put(0, arrayClone);
+
         //execution finger is moved to the value register C
         pc = register[ic];
     }
@@ -467,52 +459,15 @@ public class Core {
      * @return int 32bit int
      */
     private int genArrayID() {
-        Integer key;
-        if (!removedKeys.isEmpty()) {
-            key = removedKeys.get(0);
-            removedKeys.remove(0);
-        } else {
-            if (keys == Integer.MAX_VALUE) {
-                throw new RuntimeException("No more space for allocation");
-            }
-
+        Integer key = removedKeys.pollFirst();
+        if (key == null) {
             keys++;
             key = keys;
+
         }
+
+
         return key;
     }
 
-    private int[] loadUmz(String filePath) {
-        File f;
-        FileInputStream br = null;
-        Byte defaultByte = (byte) 0;
-        long start = System.currentTimeMillis();
-        try {
-            f = new File(filePath);
-            byte[] bytes = new byte[(int) f.length()];
-            br = new FileInputStream(f);
-            System.out.println(br.read(bytes));
-
-            ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
-            for (int i = 0; i < f.length() % 4; ++i) {
-                byteBuffer = byteBuffer.put(defaultByte);
-            }
-            IntBuffer intBuffer = byteBuffer.asIntBuffer();
-            int[] array = new int[intBuffer.limit()];
-            System.out.println(intBuffer.get(array));
-            System.out.println("Load umz in " + (System.currentTimeMillis() - start) / 1000);
-            return array;
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (br != null) {
-                    br.close();
-                }
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-        }
-        return new int[0];
-    }
 }
