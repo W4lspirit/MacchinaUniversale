@@ -44,20 +44,20 @@ public class Core {
     // A 8-6 B 5-3 C 2-0
     public Core() {
         register = new int[8];
-        trayIdToTraysMap = new HashMap<>();
+        trayIdToTraysMap = new LinkedHashMap<>();
         removedKeys = new LinkedList<>();
 
     }
 
     public static void main(String args[]) {
-/*        String filename = args[0];
-        boolean encrypted = Boolean.parseBoolean(args[1]);
+        String filename = args[0];
+      /*   boolean encrypted = Boolean.parseBoolean(args[1]);
         String key;
         if (encrypted) {
             key = args[2];
         }*/
         Core core = new Core();
-        core.init("file/sandmark.umz");
+        core.init(filename);
         long date = System.currentTimeMillis();
         System.out.println("Time start " + new Date(date));
         core.run();
@@ -67,7 +67,7 @@ public class Core {
     /**
      * Initialize the 0 platter with a list of instruction
      */
-    private void init(String fileName) {
+    public void init(String fileName) {
         /*
          * All registers shall be initialized with platters of value '0'.
          */
@@ -87,7 +87,7 @@ public class Core {
 
     }
 
-    private void run() {
+    public void run() {
         try {
 
 
@@ -197,7 +197,7 @@ public class Core {
             IntBuffer intBuffer = byteBuffer.asIntBuffer();
             int[] array = new int[intBuffer.limit()];
             System.out.println(intBuffer.get(array));
-            System.out.println("Load umz in " + (System.currentTimeMillis() - start) / 1000);
+            System.out.println("Load umz in " + (System.currentTimeMillis() - start));
             return array;
         } catch (IOException e) {
             e.printStackTrace();
@@ -463,10 +463,7 @@ public class Core {
         if (key == null) {
             keys++;
             key = keys;
-
         }
-
-
         return key;
     }
 
