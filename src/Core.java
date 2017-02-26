@@ -415,7 +415,6 @@ public class Core {
      * register C is endowed with a uniform value pattern
      * where every place is pregnant with the 1 bit.
      */
-
     private void input(int ic) {
 
     	byte value;
