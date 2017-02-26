@@ -418,13 +418,18 @@ public class Core {
 
     private void input(int ic) {
 
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("ic = [" + ic + "] enter");
-        int rc = scanner.nextInt();
-        if (rc < 0 || rc > 255) throw new RuntimeException("Stupid moron");
-        register[ic] = rc;
+    	byte value;
 
+    	try {
+    		value = (byte) System.in.read();
+    	} catch (Exception ex) {
+    		value = (byte) '*';
+    	}
 
+    	if (value <= 0) {
+    		register[ic] = 0xFFFFFFFF;
+    	} else
+    		register[ic] = (int) value;
     }
 
     /**
